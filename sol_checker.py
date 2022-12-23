@@ -1,4 +1,3 @@
-import random
 import math
 
 class Node:
@@ -69,7 +68,7 @@ def calculate_route_details(nodes_sequence):
     tot_time = 0
     for i in range(len(nodes_sequence) - 1):
         from_node = nodes_sequence[i]
-        to_node = nodes_sequence[i+1]
+        to_node = nodes_sequence[i + 1]
         tot_time += distance(from_node, to_node)
         rt_cumulative_cost += tot_time
         tot_time += to_node.serv_time
