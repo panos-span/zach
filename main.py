@@ -33,6 +33,8 @@ class Model:
                 b = self.allNodes[j]
                 dist = math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2))
                 self.matrix[i][j] = dist
+                if (i == j):
+                    self.matrix[i][j] = 100000
 
 
 def distance(from_node, to_node):
@@ -84,6 +86,41 @@ def bin_packing():
                 break
     return bins, cap
 
+
+
+
+
+def tsp_matrix(bin):
+    m = Model()
+    m.BuildModel()
+    for i in range(len(m.matrix)):
+        for j in range(len(m.matrix)):
+            if i not in bin or j not in bin:
+                m.matrix[i][j] = 100000
+    return m.matrix
+
+
+def tsp(bins):
+    orders = []
+    for bin in bins:
+        order = []
+        cost_matrix = tsp_matrix(bin)
+        order.append(bin[0])
+        for i in range(len(cost_matrix)):
+            cost_matrix[i][0] = 100000
+        while (len(order) < len(bin)):
+            i = order[-1]
+            temp = cost_matrix[i][:]
+            min_index = temp.index(min(temp))
+            order.append(min_index)
+            for i in range(len(cost_matrix)):
+                cost_matrix[i][min_index] = 100000
+        orders.append(order)
+    return orders
+
+
 bins, cap = bin_packing()
 pprint.pprint(bins)
-pprint.pprint(cap)
+#pprint.pprint(cap)
+orders = tsp(bins)
+pprint.pprint(orders)
