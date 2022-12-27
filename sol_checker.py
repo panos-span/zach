@@ -1,4 +1,6 @@
 import math
+import pprint
+
 
 class Node:
     def __init__(self, idd, xx, yy, dem=0, st=0):
@@ -96,7 +98,12 @@ def test_solution(file_name, all_nodes, vehicles, capacity):
         ln = ln.strip()
         no_commas = ln.split(sep=separator)
         ids = [int(no_commas[i]) for i in range(len(no_commas))]
+        #print(ids)
         nodes_sequence = [all_nodes[idd] for idd in ids]
+        #for node in nodes_sequence:
+        #    print(node.ID, end=',')
+        #    print()
+        #print("-------------------")
         rt_cumulative_time, rt_load = calculate_route_details(nodes_sequence)
         if rt_load > capacity:
             print('Capacity violation. Route', i, 'total load is', rt_load)
@@ -110,4 +117,4 @@ def test_solution(file_name, all_nodes, vehicles, capacity):
 
 
 all_nodes, vehicles, capacity = load_model('Instance.txt')
-test_solution('example_solution.txt', all_nodes, vehicles, capacity)
+test_solution('example_solution2.txt', all_nodes, vehicles, capacity)

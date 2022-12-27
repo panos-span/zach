@@ -20,6 +20,7 @@ class Model:
         all_nodes, vehicles, capacity = sol_checker.load_model('Instance.txt')
         self.allNodes = all_nodes
         self.vehicles = vehicles
+        self.customers = all_nodes[1:]
         self.matrix = []
         self.capacity = capacity
 
@@ -31,9 +32,9 @@ class Model:
             for j in range(0, len(self.allNodes)):
                 a = self.allNodes[i]
                 b = self.allNodes[j]
-                dist = math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2))
+                dist = math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2)) + a.serv_time
                 self.matrix[i][j] = dist
-                if (i == j):
+                if i == j:
                     self.matrix[i][j] = 100000
 
 
@@ -68,27 +69,32 @@ class Route:
 #            print('ERROR')
 
 
-def bin_packing():
-    m = Model()
-    m.BuildModel()
-    cap = [m.capacity for i in range(m.vehicles)]
-    bins = [[m.allNodes[0].ID] for i in range(m.vehicles)]
-    ids = [0 for i in range(0, len(m.allNodes))]
-    f = False
-    for node in m.allNodes:
-        if not f:
-            f = True
-            continue
-        for i in range(len(cap)):
-            if cap[i] >= node.demand:
-                bins[i].append(node.ID)
-                cap[i] -= node.demand
-                break
-    return bins, cap
+def bin_packing(m):
+    cap = [m.capacity for _ in range(m.vehicles)]
+    # bins = [[m.allNodes[0]] for _ in range(m.vehicles)]
+    binsID = [[m.allNodes[0].ID] for _ in range(m.vehicles)]
+    all_nodes = m.allNodes
+    all_nodes.sort(key=lambda s: s.demand, reverse=True)
+    for node in all_nodes:
+        if node.ID == 0:
+            break
+        max_index = cap.index(max(cap))
+        binsID[max_index].append(node.ID)
+        cap[max_index] -= node.demand
+
+    return binsID
 
 
+def calculate_route_details(nodes_sequence, matrix):
+    rt_cumulative_cost = 0
+    tot_time = 0
 
-
+    for i in range(len(nodes_sequence) - 1):
+        from_node = nodes_sequence[i]
+        to_node = nodes_sequence[i + 1]
+        tot_time += matrix[from_node][to_node]
+        rt_cumulative_cost += tot_time
+    return rt_cumulative_cost
 
 def tsp_matrix(bin):
     m = Model()
@@ -119,8 +125,23 @@ def tsp(bins):
     return orders
 
 
-bins, cap = bin_packing()
-pprint.pprint(bins)
-#pprint.pprint(cap)
+m = Model()
+m.BuildModel()
+matrix = m.matrix
+all_nodes = m.allNodes
+bins = bin_packing(m)
 orders = tsp(bins)
-pprint.pprint(orders)
+cost = 0
+for order in orders:
+    for x in order:
+        if order.index(x) == len(order) - 1:
+            print(x, end='')
+            break
+        print(x, end=',')
+    print()
+
+total_cost = 0
+for order in orders:
+    cost = calculate_route_details(order, matrix)
+    total_cost += cost
+print(total_cost)
