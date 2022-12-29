@@ -99,6 +99,7 @@ class Solver:
     def Clarke_n_Wright(self):
         self.sol = self.create_initial_routes()
         # Problem with scores in savings
+        #self.UpdateRouteCostAndLoad(self.sol.routes[0])
         savings: list = self.calculate_savings()
         savings.sort(key=lambda s: s.score, reverse=True)
         for i in range(0, len(savings)):
@@ -121,8 +122,8 @@ class Solver:
             cst = self.CalculateTotalCost(self.sol)
 
             print(cst, self.sol.cost)
-            a = 0
-        a = 0
+
+
 
     def calculate_savings(self):
         savings = []
@@ -130,10 +131,10 @@ class Solver:
             n1 = self.customers[i]
             for j in range(i + 1, len(self.customers)):
                 n2 = self.customers[j]
-                cst, load = calculate_route_details([n1,self.depot, self.depot,n2])
-                # score = self.distanceMatrix[n1.ID][self.depot.ID] + self.distanceMatrix[self.depot.ID][n2.ID]
-                # score -= self.distanceMatrix[n1.ID][n2.ID]
-                score = cst
+                #cst, load = calculate_route_details([n1,self.depot, self.depot,n2])
+                score = self.distanceMatrix[n1.ID][self.depot.ID] + self.distanceMatrix[self.depot.ID][n2.ID]
+                score -= self.distanceMatrix[n1.ID][n2.ID]
+                #score = cst
                 sav = Saving(n1, n2, score)
                 savings.append(sav)
 
@@ -147,15 +148,15 @@ class Solver:
             n.route = rt
             n.position_in_route = 1
             rt.sequenceOfNodes.insert(1, n)
-            cst, load = calculate_route_details(rt.sequenceOfNodes)
-            rt.load = load
-            rt.cost = cst
-            # rt.load = n.demand
-            # rt.cost = self.distanceMatrix[self.depot.ID][n.ID] + self.distanceMatrix[n.ID][self.depot.ID]
-            # rt.cost = cst
+            #cst, load = calculate_route_details(rt.sequenceOfNodes)
+            #rt.load = load
+            #rt.cost = cst
+            rt.load = n.demand
+            rt.cost = self.distanceMatrix[self.depot.ID][n.ID] + self.distanceMatrix[n.ID][self.depot.ID]
+            #rt.cost = cst
             s.routes.append(rt)
-            s.cost += cst
-            # s.cost += rt.cost
+            #s.cost += cst
+            s.cost += rt.cost
         return s
 
     def not_first_or_last(self, rt, n):

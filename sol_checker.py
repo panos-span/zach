@@ -100,6 +100,7 @@ def test_solution(file_name, all_nodes, vehicles, capacity):
         ids = [int(no_commas[i]) for i in range(len(no_commas))]
         #print(ids)
         nodes_sequence = [all_nodes[idd] for idd in ids]
+        #print(len(nodes_sequence))
         #for node in nodes_sequence:
         #    print(node.ID, end=',')
         #    print()
@@ -117,4 +118,4 @@ def test_solution(file_name, all_nodes, vehicles, capacity):
 
 
 all_nodes, vehicles, capacity = load_model('Instance.txt')
-test_solution('example_solution2.txt', all_nodes, vehicles, capacity)
+test_solution('example_vnd.txt', all_nodes, vehicles, capacity)
