@@ -131,4 +131,4 @@ def test_solution(file_name, all_nodes, vehicles, capacity):
     print(sum)
 
 all_nodes, vehicles, capacity = load_model('Instance.txt')
-test_solution('example_solution3.txt', all_nodes, vehicles, capacity)
+test_solution('solution.txt', all_nodes, vehicles, capacity)
