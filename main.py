@@ -321,9 +321,9 @@ def RelocationMove(routes, matrix, all_nodes):
     return final_routes, total_cost
 
 
-def CrossRouteRelocationMove(routes, matrix, all_nodes):
-    # Cross route relocation move
-    # Cross route relocation for each pair of routes
+def RelocationMoveCrossRoute(routes, matrix, all_nodes):
+    # Relocation move cross route
+    # Relocation for each pair of routes
     final_routes = routes
     for i in range(len(final_routes)):
         for j in range(len(final_routes)):
@@ -340,6 +340,7 @@ def CrossRouteRelocationMove(routes, matrix, all_nodes):
                     new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
                     if new_cost < cost and new_load <= 200:
                         final_routes[i] = new_route1
+                        final_routes[j] = new_route2
                         cost = new_cost
                         load = new_load
     total_cost = CalculateTotalCost(final_routes)
@@ -369,7 +370,7 @@ def RVNS(routes, matrix, all_nodes):
         elif move == 5:
             new_routes, new_cost = RelocationMove(final_routes, matrix, all_nodes)
         elif move == 6:
-            new_routes, new_cost = CrossRouteRelocationMove(final_routes, matrix, all_nodes)
+            new_routes, new_cost = RelocationMoveCrossRoute(final_routes, matrix, all_nodes)
         if new_cost < cost:
             final_routes = new_routes
             cost = new_cost
@@ -378,53 +379,53 @@ def RVNS(routes, matrix, all_nodes):
     return final_routes, cost
 
 
-def VND(routes, matrix, all_nodes):
+def VND(routes, matrix, all_nodes): #4,3,1,2,0,5
     # Variable neighborhood descent
     # 5 types of moves
     # 5 types of neighborhoods
-
     k = 0
     total = CalculateTotalCost(routes)
-
-    while k < 5:
-
-        if k == 1:
+    #random.seed(seed)  # seed 11 cost = 6650.517105958828!!
+    while k < 6:
+        k = random.randint(0, 5)
+        # print(k)
+        if k == 4:
             routes, total_cost = CrossRouteSwapMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 0:
+        elif k == 3:
             routes, total_cost = TwoOptMoveCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 4:
+        elif k == 1:
             routes, total_cost = SwapMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 5:
+        elif k == 2:
             routes, total_cost = RelocationMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 3:
+        elif k == 0:
             routes, total_cost = TwoOptMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 2:
-            routes, total_cost = CrossRouteRelocationMove(routes, matrix, all_nodes)
+        elif k == 5:
+            routes, total_cost = RelocationMoveCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
@@ -439,13 +440,18 @@ def VNS(routes, matrix, all_nodes):
     # 5 types of neighborhoods
     # 5 times of VND
 
-    end = time() + 30
-    total = 0
-    final_routes = routes
+    end = time() + 10
+    total = CalculateTotalCost(routes)
+    temp = routes
     while time() < end:
-        routes, cost = VND(routes, matrix, all_nodes)
-        total = cost
-    return final_routes, total
+        for i in range(len(temp)):
+            random.shuffle(temp[i][1:])
+        temp, cost = VND(temp, matrix, all_nodes)
+        if cost < total:
+            total = cost
+            routes = temp
+
+    return routes, total
 
 
 m = Model()
@@ -454,7 +460,7 @@ matrix = m.matrix
 all_nodes = m.allNodes
 bins = bin_packing(m)
 orders = tsp(bins)
-cost = 0
+
 # for order in orders:
 #    for x in order:
 #        if order.index(x) == len(order) - 1:
@@ -481,8 +487,9 @@ cost = 0
 # routes, total_cost = TwoOptMoveCrossRoute(orders, matrix, all_nodes)
 # routes, total_cost = CrossRouteSwapMove(orders, matrix, all_nodes)
 # routes, total_cost = CrossExchangeMove(routes, matrix, all_nodes)
-routes, total_cost = RVNS(orders, matrix, all_nodes)
 
+random.seed(2) # seed 2 cost = 6652.208781106111!!
+routes, total_cost = VNS(orders, matrix, all_nodes)
 print(total_cost)
 
 for route in routes:
