@@ -215,7 +215,7 @@ def CrossRouteSwapMove(routes, matrix, all_nodes):
                         new_route[k], new_route2[l] = new_route2[l], new_route[k]
                         new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
                         new_cost2, new_load2 = calculate_route_details(new_route2, matrix, all_nodes)
-                        if new_cost < cost and new_load <= 200 and new_cost2 < cost2 and new_load2 <= 200:
+                        if new_cost < cost and new_load <= capacity and new_cost2 < cost2 and new_load2 <= capacity:
                             final_routes[i] = new_route
                             final_routes[j] = new_route2
                             cost = new_cost
@@ -238,7 +238,7 @@ def TwoOptMove(routes, matrix, all_nodes):
                 new_route = final_route[:]
                 new_route[i:j] = final_route[i:j][::-1]
                 new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                if new_cost < cost and new_load <= 200:
+                if new_cost < cost and new_load <= capacity:
                     final_route = new_route
                     cost = new_cost
                     load = new_load
@@ -266,7 +266,7 @@ def OrOptCrossRoute(routes, matrix, all_nodes):
 
                     new_cost, new_load = calculate_route_details(new_route1, matrix, all_nodes)
                     new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
-                    if new_cost < cost and new_load <= 200:
+                    if new_cost < cost and new_load <= capacity:
                         final_routes[i] = new_route1
                         final_routes[j] = new_route2
                         cost = new_cost
@@ -294,7 +294,7 @@ def TwoOptMoveCrossRoute(routes, matrix, all_nodes):
 
                     new_cost, new_load = calculate_route_details(new_route1, matrix, all_nodes)
                     new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
-                    if new_cost < cost and new_load <= 200:
+                    if new_cost < cost and new_load <= capacity:
                         final_routes[i] = new_route1
                         final_routes[j] = new_route2
                         cost = new_cost
@@ -315,7 +315,7 @@ def SwapMove(routes, matrix, all_nodes):
                 new_route = final_route[:]
                 new_route[i], new_route[j] = new_route[j], new_route[i]
                 new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                if new_cost < cost and new_load <= 200:
+                if new_cost < cost and new_load <= capacity:
                     final_route = new_route
                     cost = new_cost
                     load = new_load
@@ -339,7 +339,7 @@ def CrossExchangeMove(routes, matrix, all_nodes):
                         new_route[i:j] = final_route[k:l]
                         new_route[k:l] = final_route[i:j]
                         new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                        if new_cost < cost and new_load <= 200:
+                        if new_cost < cost and new_load <= capacity:
                             final_route = new_route
                             cost = new_cost
                             load = new_load
@@ -362,10 +362,33 @@ def RelocationMove(routes, matrix, all_nodes):
                 new_route = final_route[:]
                 new_route.insert(j, new_route.pop(i))
                 new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                if new_cost < cost and new_load <= 200:
+                if new_cost < cost and new_load <= capacity:
                     final_route = new_route
                     cost = new_cost
                     load = new_load
+        final_routes.append(final_route)
+    total_cost = CalculateTotalCost(final_routes)
+    return final_routes, total_cost
+
+
+def OrOptMove(routes, matrix, all_nodes):
+    # Or-opt move
+    # Or-opt for each route
+    final_routes = []
+    for route in routes:
+        cost, load = calculate_route_details(route, matrix, all_nodes)
+        final_route = route
+        for i in range(1, len(final_route) - 1):
+            for j in range(i + 1, len(final_route)):
+                for k in range(j + 1, len(final_route)):
+                    new_route = final_route[:]
+                    new_route[i:j] = final_route[j:k]
+                    new_route[j:k] = final_route[i:j]
+                    new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
+                    if new_cost < cost and new_load <= capacity:
+                        final_route = new_route
+                        cost = new_cost
+                        load = new_load
         final_routes.append(final_route)
     total_cost = CalculateTotalCost(final_routes)
     return final_routes, total_cost
@@ -388,7 +411,7 @@ def RelocationMoveCrossRoute(routes, matrix, all_nodes):
                     new_route1.insert(l, new_route1.pop(k))
                     new_cost, new_load = calculate_route_details(new_route1, matrix, all_nodes)
                     new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
-                    if new_cost < cost and new_load <= 200:
+                    if new_cost < cost and new_load <= capacity:
                         final_routes[i] = new_route1
                         final_routes[j] = new_route2
                         cost = new_cost
@@ -403,38 +426,38 @@ def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
     # 5 types of neighborhoods
     k = 0
     total = CalculateTotalCost(routes)
-    while k < 7:
-        k = random.randint(0, 6)
+    while k < 8:
+        k = random.randint(0, 7)
         # print(k)
-        if k == 5:
+        if k == 6:
             routes, total_cost = CrossRouteSwapMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 3:
+        elif k == 4:
             routes, total_cost = OrOptCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 4:
+        elif k == 5:
             routes, total_cost = TwoOptMoveCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 1:
+        elif k == 2:
             routes, total_cost = SwapMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 2:
+        elif k == 3:
             routes, total_cost = RelocationMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
@@ -448,7 +471,14 @@ def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
                 k = 0
             else:
                 k += 1
-        elif k == 6:
+        elif k == 1:
+            routes, total_cost = OrOptMove(routes, matrix, all_nodes)
+            if total_cost < total:
+                total = total_cost
+                k = 0
+            else:
+                k += 1
+        elif k == 7:
             routes, total_cost = RelocationMoveCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
@@ -487,11 +517,13 @@ if __name__ == '__main__':
     start = timeit.default_timer()
     m = Model()
     m.BuildModel()
+    global capacity
+    capacity = m.capacity
     matrix = m.matrix
     all_nodes = m.allNodes
     bins = bin_packing(m)
     orders = tsp(bins)
-    random.seed(2)  # seed 2 cost = 6245.481766546021!!
+    random.seed(4)  # seed 2 cost = 6245.481766546021!! / seed 4 cost = 6245.040496780005!
     routes, total_cost = VNS(orders, matrix, all_nodes)
 
     print("Total cost: ", total_cost)
