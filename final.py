@@ -393,7 +393,6 @@ def OrOptMove(routes, matrix, all_nodes):
     total_cost = CalculateTotalCost(final_routes)
     return final_routes, total_cost
 
-
 def RelocationMoveCrossRoute(routes, matrix, all_nodes):
     # Relocation move cross route
     # Relocation for each pair of routes
@@ -426,24 +425,16 @@ def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
     # 5 types of neighborhoods
     k = 0
     total = CalculateTotalCost(routes)
-    while k < 8:
-        k = random.randint(0, 7)
-        # print(k)
-        if k == 6:
+    while k < 6:
+        #k = random.randint(0, 7)
+        if k == 0:
             routes, total_cost = CrossRouteSwapMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 4:
-            routes, total_cost = OrOptCrossRoute(routes, matrix, all_nodes)
-            if total_cost < total:
-                total = total_cost
-                k = 0
-            else:
-                k += 1
-        elif k == 5:
+        elif k == 1:
             routes, total_cost = TwoOptMoveCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
@@ -464,21 +455,14 @@ def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
                 k = 0
             else:
                 k += 1
-        elif k == 0:
+        elif k == 4:
             routes, total_cost = TwoOptMove(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 1:
-            routes, total_cost = OrOptMove(routes, matrix, all_nodes)
-            if total_cost < total:
-                total = total_cost
-                k = 0
-            else:
-                k += 1
-        elif k == 7:
+        elif k == 5:
             routes, total_cost = RelocationMoveCrossRoute(routes, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
