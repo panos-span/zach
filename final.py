@@ -393,6 +393,7 @@ def OrOptMove(routes, matrix, all_nodes):
     total_cost = CalculateTotalCost(final_routes)
     return final_routes, total_cost
 
+
 def RelocationMoveCrossRoute(routes, matrix, all_nodes):
     # Relocation move cross route
     # Relocation for each pair of routes
@@ -419,6 +420,32 @@ def RelocationMoveCrossRoute(routes, matrix, all_nodes):
     return final_routes, total_cost
 
 
+def ExchangeMoveCrossRoute(routes, matrix, all_nodes):
+    # Exchange move cross route
+    # Exchange for each pair of routes
+    final_routes = routes
+    for i in range(len(final_routes)):
+        for j in range(len(final_routes)):
+            if i == j:
+                continue
+            cost, load = calculate_route_details(final_routes[i], matrix, all_nodes)
+            cost += calculate_route_details(final_routes[j], matrix, all_nodes)[0]
+            for k in range(1, len(final_routes[i]) - 1):
+                for l in range(1, len(final_routes[j]) - 1):
+                    new_route1 = final_routes[i][:]
+                    new_route2 = final_routes[j][:]
+                    new_route1[k], new_route2[l] = new_route2[l], new_route1[k]
+                    new_cost, new_load = calculate_route_details(new_route1, matrix, all_nodes)
+                    new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
+                    if new_cost < cost and new_load <= capacity:
+                        final_routes[i] = new_route1
+                        final_routes[j] = new_route2
+                        cost = new_cost
+                        load = new_load
+    total_cost = CalculateTotalCost(final_routes)
+    return final_routes, total_cost
+
+
 def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
     # Variable neighborhood descent
     # 5 types of moves
@@ -426,7 +453,7 @@ def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
     k = 0
     total = CalculateTotalCost(routes)
     while k < 6:
-        #k = random.randint(0, 7)
+        # k = random.randint(0, 7)
         if k == 0:
             routes, total_cost = CrossRouteSwapMove(routes, matrix, all_nodes)
             if total_cost < total:
@@ -508,8 +535,8 @@ if __name__ == '__main__':
     bins = bin_packing(m)
     orders = tsp(bins)
     random.seed(4)  # seed 2 cost = 6245.481766546021!! / seed 4 cost = 6245.040496780005!
-    routes, total_cost = VNS(orders, matrix, all_nodes)
-
+    routes, total_cost = ExchangeMoveCrossRoute(orders, matrix, all_nodes)
+    routes, total_cost = VNS(routes, matrix, all_nodes)
     print("Total cost: ", total_cost)
 
     f = open("solution.txt", "w")
