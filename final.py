@@ -2,7 +2,7 @@ from math import sqrt, pow
 import random
 from time import time
 import timeit
-
+from copy import deepcopy
 
 def load_model(file_name):
     all_nodes = []
@@ -64,10 +64,8 @@ class Model:
     # instance variables
     def __init__(self):
         all_nodes, vehicles, capacity = load_model('Instance.txt')
-        # self.allNodes = all_nodes
         self.allNodes = {node.ID: node for node in all_nodes}
         self.vehicles = vehicles
-        # self.customers = all_nodes[1:]
         self.matrix = []
         self.capacity = capacity
 
@@ -84,13 +82,6 @@ class Model:
                     self.matrix[i][j] = 100000
 
 
-def distance(from_node, to_node):
-    dx = from_node.x - to_node.x
-    dy = from_node.y - to_node.y
-    dist = sqrt(dx ** 2 + dy ** 2)
-    return dist
-
-
 class Route:
     def __init__(self, dp, cap):
         self.sequenceOfNodes = []
@@ -103,7 +94,6 @@ class Route:
 
 def bin_packing(m):
     cap = [m.capacity for _ in range(m.vehicles)]
-    # bins = [[m.allNodes[0]] for _ in range(m.vehicles)]
     binsID = [[m.allNodes[0].ID] for _ in range(m.vehicles)]
     all_nodes = list(m.allNodes.values())
     all_nodes.sort(key=lambda s: s.demand, reverse=True)
@@ -144,7 +134,6 @@ def tsp_matrix(bin):
 def tsp(bins):
     orders = []
     for bin in bins:
-        # order = tsp_minimum_insertions(bin)
         order = []
         cost_matrix = tsp_matrix(bin)
         order.append(bin[0])
@@ -159,33 +148,6 @@ def tsp(bins):
                 cost_matrix[i][min_index] = 100000
         orders.append(order)
     return orders
-
-
-def tsp_minimum_insertions(bin):
-    order = []
-    cost_matrix = tsp_matrix(bin)
-    order.append(bin[0])
-    for i in range(len(cost_matrix)):
-        cost_matrix[i][0] = 100000
-    while len(order) < len(bin):
-        min_cost = 100000
-        min_index = 0
-        min_insertion = 0
-        for i in range(len(order)):
-            for j in range(len(cost_matrix)):
-                if j not in order:
-                    temp = cost_matrix[order[i]][:]
-                    temp[j] = 100000
-                    min_cost_temp = min(temp)
-                    if min_cost_temp < min_cost:
-                        min_cost = min_cost_temp
-                        min_index = j
-                        min_insertion = i
-        order.insert(min_insertion + 1, min_index)
-        for i in range(len(cost_matrix)):
-            cost_matrix[i][min_index] = 100000
-
-    return order
 
 
 def CalculateTotalCost(routes):
@@ -225,53 +187,6 @@ def CrossRouteSwapMove(routes, matrix, all_nodes):
     return final_routes, total_cost
 
 
-def TwoOptMove(routes, matrix, all_nodes):
-    # Cross 2-opt move
-    # Cross 2-opt for each route
-    final_routes = []
-    for route in routes:
-        cost, load = calculate_route_details(route, matrix, all_nodes)
-        final_route = route
-        for i in range(1, len(final_route) - 2):
-            for j in range(i + 1, len(final_route) - 1):
-                new_route = final_route[:]
-                new_route[i:j] = final_route[i:j][::-1]
-                new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                if new_cost < cost and new_load <= capacity:
-                    final_route = new_route
-                    cost = new_cost
-        final_routes.append(final_route)
-    total_cost = CalculateTotalCost(final_routes)
-    return final_routes, total_cost
-
-
-def OrOptCrossRoute(routes, matrix, all_nodes):
-    # Or-opt move cross route
-    # Or-opt for each pair of routes
-    final_routes = routes
-    for i in range(len(final_routes)):
-        for j in range(len(final_routes)):
-            if i == j:
-                continue
-            cost, load = calculate_route_details(final_routes[i], matrix, all_nodes)
-            cost += calculate_route_details(final_routes[j], matrix, all_nodes)[0]
-            for k in range(1, len(final_routes[i]) - 1):
-                for l in range(1, len(final_routes[j]) - 1):
-                    new_route1 = final_routes[i][:]
-                    new_route2 = final_routes[j][:]
-                    new_route1[k:k + 1] = final_routes[j][l:l + 1]
-                    new_route2[l:l + 1] = final_routes[i][k:k + 1]
-
-                    new_cost, new_load = calculate_route_details(new_route1, matrix, all_nodes)
-                    new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
-                    if new_cost < cost and new_load <= capacity:
-                        final_routes[i] = new_route1
-                        final_routes[j] = new_route2
-                        cost = new_cost
-    total_cost = CalculateTotalCost(final_routes)
-    return final_routes, total_cost
-
-
 def TwoOptMoveCrossRoute(routes, matrix, all_nodes):
     # 2-opt move cross route
     # 2-opt for each pair of routes
@@ -282,8 +197,8 @@ def TwoOptMoveCrossRoute(routes, matrix, all_nodes):
                 continue
             cost, load = calculate_route_details(final_routes[i], matrix, all_nodes)
             cost += calculate_route_details(final_routes[j], matrix, all_nodes)[0]
-            for k in range(1, len(final_routes[i]) - 1):
-                for l in range(1, len(final_routes[j]) - 1):
+            for k in range(1, len(final_routes[i])):
+                for l in range(1, len(final_routes[j])):
                     new_route1 = final_routes[i][:]
                     new_route2 = final_routes[j][:]
                     new_route1[k:] = final_routes[j][l:]
@@ -319,29 +234,6 @@ def SwapMove(routes, matrix, all_nodes):
     return final_routes, total_cost
 
 
-def CrossExchangeMove(routes, matrix, all_nodes):
-    # Cross exchange move
-    # Cross exchange for each route
-    final_routes = []
-    for route in routes:
-        cost, load = calculate_route_details(route, matrix, all_nodes)
-        final_route = route
-        for i in range(1, len(final_route) - 2):
-            for j in range(i + 1, len(final_route) - 1):
-                for k in range(j + 1, len(final_route) - 1):
-                    for l in range(k + 1, len(final_route)):
-                        new_route = final_route[:]
-                        new_route[i:j] = final_route[k:l]
-                        new_route[k:l] = final_route[i:j]
-                        new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                        if new_cost < cost and new_load <= capacity:
-                            final_route = new_route
-                            cost = new_cost
-        final_routes.append(final_route)
-    total_cost = CalculateTotalCost(final_routes)
-    return final_routes, total_cost
-
-
 def RelocationMove(routes, matrix, all_nodes):
     # Relocation move
     # Relocation for each route
@@ -349,7 +241,7 @@ def RelocationMove(routes, matrix, all_nodes):
     for route in routes:
         cost, load = calculate_route_details(route, matrix, all_nodes)
         final_route = route
-        for i in range(1, len(final_route) - 1):
+        for i in range(1, len(final_route)):
             for j in range(1, len(final_route)):
                 if i == j:
                     continue
@@ -364,119 +256,66 @@ def RelocationMove(routes, matrix, all_nodes):
     return final_routes, total_cost
 
 
-def OrOptMove(routes, matrix, all_nodes):
-    # Or-opt move
-    # Or-opt for each route
-    final_routes = []
-    for route in routes:
-        cost, load = calculate_route_details(route, matrix, all_nodes)
-        final_route = route
-        for i in range(1, len(final_route) - 1):
-            for j in range(i + 1, len(final_route)):
-                for k in range(j + 1, len(final_route)):
-                    new_route = final_route[:]
-                    new_route[i:j] = final_route[j:k]
-                    new_route[j:k] = final_route[i:j]
-                    new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
-                    if new_cost < cost and new_load <= capacity:
-                        final_route = new_route
-                        cost = new_cost
-        final_routes.append(final_route)
-    total_cost = CalculateTotalCost(final_routes)
-    return final_routes, total_cost
-
-
-def RelocationMoveCrossRoute(routes, matrix, all_nodes):
-    # Relocation move cross route
-    # Relocation for each pair of routes
-    final_routes = routes
-    for i in range(len(final_routes)):
-        for j in range(len(final_routes)):
-            if i == j:
-                continue
-            cost, load = calculate_route_details(final_routes[i], matrix, all_nodes)
-            cost += calculate_route_details(final_routes[j], matrix, all_nodes)[0]
-            for k in range(1, len(final_routes[i]) - 1):
-                for l in range(1, len(final_routes[j]) - 1):
-                    new_route1 = final_routes[i][:]
-                    new_route2 = final_routes[j][:]
-                    new_route1.insert(l, new_route1.pop(k))
-                    new_cost, new_load = calculate_route_details(new_route1, matrix, all_nodes)
-                    new_cost += calculate_route_details(new_route2, matrix, all_nodes)[0]
-                    if new_cost < cost and new_load <= capacity:
-                        final_routes[i] = new_route1
-                        final_routes[j] = new_route2
-                        cost = new_cost
-    total_cost = CalculateTotalCost(final_routes)
-    return final_routes, total_cost
-
-
-def VND(routes, matrix, all_nodes):  # 5,3,4,1,2,0,6
+def VND(temp, matrix, all_nodes):  # 5,3,4,1,2,0,6
     # Variable neighborhood descent
     # 5 types of moves
     # 5 types of neighborhoods
     k = 0
-    total = CalculateTotalCost(routes)
+    total = CalculateTotalCost(temp)
     while k < 4:
         # k = random.randint(0, 7)
         if k == 0:
-            routes, total_cost = CrossRouteSwapMove(routes, matrix, all_nodes)
+            temp, total_cost = CrossRouteSwapMove(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
         elif k == 1:
-            routes, total_cost = TwoOptMoveCrossRoute(routes, matrix, all_nodes)
+            temp, total_cost = TwoOptMoveCrossRoute(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
         elif k == 3:
-            routes, total_cost = SwapMove(routes, matrix, all_nodes)
+            temp, total_cost = SwapMove(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
         elif k == 2:
-            routes, total_cost = RelocationMove(routes, matrix, all_nodes)
+            temp, total_cost = RelocationMove(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-    return routes, total
+    return temp, total
 
 
-def VNS(routes, matrix, all_nodes):
+def VNS(final_routes, matrix, all_nodes):
     # Variable neighborhood search
-    # 5 types of moves
-    # 5 types of neighborhoods
-    # 5 times of VND
-
     end = time() + 179
-    total = CalculateTotalCost(routes)
-    temp = routes
+    total = CalculateTotalCost(final_routes)
+    temp = final_routes
     shaker = temp
-    j = 1
-    while time() < end:
+    j = 0
+    while time() < end:  # result 6185 comes up at the 207th loop
+        j +=1
         for i in range(len(shaker)):
-            copy = shaker[i][1:]
-            random.shuffle(copy)
-            shaker[i][1:] = copy
-        # print(shaker)
+            copy1 = shaker[i][1:]
+            random.shuffle(copy1)
+            shaker[i][1:] = copy1
         temp, cost = VND(shaker, matrix, all_nodes)
         if cost < total:
             total = cost
-            routes = temp
+            final_routes = deepcopy(temp)
+        if cost < 6138:
+            break
         print(j, cost)
-        # if cost < 6202:
-        #    break
-        j += 1
-
-    return routes, total
+    return final_routes, total
 
 
 if __name__ == '__main__':
@@ -489,9 +328,9 @@ if __name__ == '__main__':
     matrix = m.matrix
     all_nodes = m.allNodes
     bins = bin_packing(m)
-    orders = tsp(bins)
+    routes = tsp(bins)
     random.seed(3)  # seed 3 = 6185.988925532871
-    routes, total_cost = VNS(orders, matrix, all_nodes)
+    routes, total_cost = VNS(routes, matrix, all_nodes)
 
     print("Total cost: ", total_cost)
 
@@ -503,17 +342,14 @@ if __name__ == '__main__':
         for x in route:
             if route.index(x) == len(route) - 1:
                 f.write(str(x) + "\n")
-                # print(x, end="")
                 break
             f.write(str(x) + ",")
-            # print(x, end=',')
-        # print()
     f.close()
     stop = timeit.default_timer()
     print("End")
-    print("Proccessing time: ", stop - start)  # 179.58892709999964s
-    total_cost = 0
-    for route in routes:
-        cost, load = calculate_route_details(route, matrix, all_nodes)
-        total_cost += cost
-    print(total_cost)
+    print("Proccessing time: ", stop - start)
+   #total_cost = 0
+   #for route in routes:
+   #    cost, load = calculate_route_details(route, matrix, all_nodes)
+   #    total_cost += cost
+   #print(total_cost)
