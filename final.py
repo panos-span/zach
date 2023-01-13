@@ -91,7 +91,7 @@ class Route:
         self.capacity = cap
         self.load = 0
 
-
+# put every node in the vehicle that has more capacity each time
 def bin_packing(m):
     cap = [m.capacity for _ in range(m.vehicles)]
     binsID = [[m.allNodes[0].ID] for _ in range(m.vehicles)]
@@ -104,9 +104,9 @@ def bin_packing(m):
         binsID[max_index].append(node.ID)
         cap[max_index] -= node.demand
 
-    return binsID
+    return binsID  # returns the IDs of the nodes in each vehicle
 
-
+# calculates the time needed for each route
 def calculate_route_details(nodes_sequence, matrix, all_nodes):
     rt_cumulative_cost = 0
     rt_load = 0
@@ -120,7 +120,8 @@ def calculate_route_details(nodes_sequence, matrix, all_nodes):
         rt_load += all_nodes[from_node].demand
     return rt_cumulative_cost, rt_load
 
-
+# prepare the cost matrix for TSP in each bin
+# if the node is not in the bin we assign 100000 in every column and row that it is present so that it is not selected in the TSP algorithm
 def tsp_matrix(bin):
     m = Model()
     m.BuildModel()
@@ -130,26 +131,27 @@ def tsp_matrix(bin):
                 m.matrix[i][j] = 100000
     return m.matrix
 
-
+# TSP nearest neighbour in a bin
 def tsp(bins):
     orders = []
     for bin in bins:
         order = []
         cost_matrix = tsp_matrix(bin)
-        order.append(bin[0])
+        order.append(bin[0])  # node 0 is always the first node of the route
         for i in range(len(cost_matrix)):
-            cost_matrix[i][0] = 100000
-        while len(order) < len(bin):
+            cost_matrix[i][0] = 100000  # assign the cost in the first column as 100000 so that node 0 is not selected again
+        while len(order) < len(bin):  # if we haven't ordered all the nodes
+            # find the node that is shortest to the last ordered node
             i = order[-1]
             temp = cost_matrix[i][:]
             min_index = temp.index(min(temp))
             order.append(min_index)
             for i in range(len(cost_matrix)):
-                cost_matrix[i][min_index] = 100000
+                cost_matrix[i][min_index] = 100000  # assign the cost in the ordered node's column as 100000 so that it is not selected again
         orders.append(order)
-    return orders
+    return orders  # returns the bin with the nodes order with the nearest neighbour method
 
-
+# Calculates cumulative cost for all the routes (the objective function)
 def CalculateTotalCost(routes):
     total_cost = 0
     for route in routes:
@@ -302,7 +304,7 @@ def VNS(final_routes, matrix, all_nodes):
     temp = final_routes
     shaker = temp
     j = 0
-    while time() < end:  # result 6185 comes up at the 207th loop
+    while time() < end:  # run VNS for 179 seconds
         j +=1
         for i in range(len(shaker)):
             copy1 = shaker[i][1:]
@@ -312,8 +314,6 @@ def VNS(final_routes, matrix, all_nodes):
         if cost < total:
             total = cost
             final_routes = deepcopy(temp)
-        if cost < 6138:
-            break
         print(j, cost)
     return final_routes, total
 
@@ -321,23 +321,29 @@ def VNS(final_routes, matrix, all_nodes):
 if __name__ == '__main__':
     print("Start")
     start = timeit.default_timer()
+
+    # set the assignment's data
     m = Model()
     m.BuildModel()
     global capacity
     capacity = m.capacity
     matrix = m.matrix
     all_nodes = m.allNodes
+
+    # create initial solution with a greedy algorithm
     bins = bin_packing(m)
     routes = tsp(bins)
+
+    # provide the initial solution to the VNS method
     random.seed(3)  # seed 3 = 6185.988925532871
     routes, total_cost = VNS(routes, matrix, all_nodes)
 
     print("Total cost: ", total_cost)
 
+    # Write the solution in solution.txt file
     f = open("solution.txt", "w")
     f.write("Cost:\n" + str(total_cost) + "\n")
     f.write("Routes:\n" + str(len(routes)) + "\n")
-
     for route in routes:
         for x in route:
             if route.index(x) == len(route) - 1:
@@ -345,6 +351,7 @@ if __name__ == '__main__':
                 break
             f.write(str(x) + ",")
     f.close()
+
     stop = timeit.default_timer()
     print("End")
     print("Proccessing time: ", stop - start)
