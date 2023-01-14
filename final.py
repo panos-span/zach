@@ -201,7 +201,7 @@ def TwoOptMoveCrossRoute(routes, matrix, all_nodes):
             cost, load = calculate_route_details(final_routes[i], matrix, all_nodes)
             cost += calculate_route_details(final_routes[j], matrix, all_nodes)[0]
             for k in range(1, len(final_routes[i])):
-                for l in range(1, len(final_routes[j])-1):
+                for l in range(1, len(final_routes[j]) - 1):
                     new_route1 = final_routes[i][:]
                     new_route2 = final_routes[j][:]
                     new_route1[k:] = final_routes[j][l:]
@@ -260,10 +260,26 @@ def OrOptCrossRoute(routes, matrix, all_nodes):
                         final_routes[i] = new_route1
                         final_routes[j] = new_route2
                         cost = new_cost
-                        load = new_load
     total_cost = CalculateTotalCost(final_routes)
     return final_routes, total_cost
 
+
+def TwoOptMove(routes, matrix, all_nodes):
+    final_routes = []
+    for route in routes:
+        cost, load = calculate_route_details(route, matrix, all_nodes)
+        final_route = route
+        for i in range(1, len(final_route)):
+            for j in range(i + 1, len(final_route)):
+                new_route = final_route[:]
+                new_route[i:j] = final_route[i:j][::-1]
+                new_cost, new_load = calculate_route_details(new_route, matrix, all_nodes)
+                if new_cost < cost and new_load <= capacity:
+                    final_route = new_route
+                    cost = new_cost
+        final_routes.append(final_route)
+    total_cost = CalculateTotalCost(final_routes)
+    return final_routes, total_cost
 
 def RelocationMove(routes, matrix, all_nodes):
     # Relocation move
@@ -291,7 +307,7 @@ def VND(temp, matrix, all_nodes):
     # Variable neighborhood descent
     k = 0
     total = CalculateTotalCost(temp)
-    while k < 5:
+    while k < 6:
         if k == 0:
             temp, total_cost = CrossRouteSwapMove(temp, matrix, all_nodes)
             if total_cost < total:
@@ -313,15 +329,22 @@ def VND(temp, matrix, all_nodes):
                 k = 0
             else:
                 k += 1
-        elif k == 4:
+        elif k == 5:
             temp, total_cost = SwapMove(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
             else:
                 k += 1
-        elif k == 2:
+        elif k == 4:
             temp, total_cost = RelocationMove(temp, matrix, all_nodes)
+            if total_cost < total:
+                total = total_cost
+                k = 0
+            else:
+                k += 1
+        elif k == 2:
+            temp, total_cost = TwoOptMove(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
                 k = 0
