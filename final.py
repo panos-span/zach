@@ -1,8 +1,8 @@
-from math import sqrt, pow
 import random
-from time import time
 import timeit
 from copy import deepcopy
+from math import sqrt, pow
+from time import time
 
 
 def load_model(file_name):
@@ -306,7 +306,7 @@ def VND(temp, matrix, all_nodes):
                 k = 0
             else:
                 k += 1
-        elif k == 2:
+        elif k == 3:
             temp, total_cost = OrOptCrossRoute(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
@@ -320,7 +320,7 @@ def VND(temp, matrix, all_nodes):
                 k = 0
             else:
                 k += 1
-        elif k == 3:
+        elif k == 2:
             temp, total_cost = RelocationMove(temp, matrix, all_nodes)
             if total_cost < total:
                 total = total_cost
@@ -337,7 +337,7 @@ def VNS(final_routes, matrix, all_nodes):
     temp = final_routes
     shaker = temp
     j = 1
-    while time() < end:  # run VNS for 179 seconds, result 6134 comes up at the 171th loop
+    while time() < end:  # run VNS for 179 seconds, result 6134 comes up at the 171st loop
         # "shaking" action for the routes
         for i in range(len(shaker)):
             copy1 = shaker[i][1:]
@@ -371,7 +371,7 @@ if __name__ == '__main__':
     routes = tsp(bins)
 
     # provide the initial solution to the VNS method
-    random.seed(5)  # seed 3 = 6185.988925532871
+    random.seed(1)  # seed 3 = 6185.988925532871
     routes, total_cost = VNS(routes, matrix, all_nodes)
 
     print("Total cost: ", total_cost)
@@ -390,4 +390,4 @@ if __name__ == '__main__':
 
     stop = timeit.default_timer()
     print("End")
-    print("Proccessing time: ", stop - start)
+    print("Processing time: ", stop - start)
