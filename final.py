@@ -4,6 +4,7 @@ from time import time
 import timeit
 from copy import deepcopy
 
+
 def load_model(file_name):
     all_nodes = []
     all_lines = list(open(file_name, "r"))
@@ -54,7 +55,6 @@ class Node:
         self.x = xx
         self.y = yy
         self.ID = idd
-        self.isRouted = False
         self.demand = dem
         self.serv_time = st
 
@@ -76,20 +76,13 @@ class Model:
             for j in range(0, len(self.allNodes)):
                 a = self.allNodes[i]
                 b = self.allNodes[j]
+                # calculate distance between two nodes taking into account the serving time
                 dist = sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2)) + a.serv_time
                 self.matrix[i][j] = dist
+                # for the diagonal elements, assign a very large value (big_value=100000)
                 if i == j:
-                    self.matrix[i][j] = 100000
+                    self.matrix[i][j] = big_value
 
-
-class Route:
-    def __init__(self, dp, cap):
-        self.sequenceOfNodes = []
-        self.sequenceOfNodes.append(dp)
-        self.sequenceOfNodes.append(dp)
-        self.cost = 0
-        self.capacity = cap
-        self.load = 0
 
 # put every node in the vehicle that has more capacity each time
 def bin_packing(m):
@@ -106,6 +99,7 @@ def bin_packing(m):
 
     return binsID  # returns the IDs of the nodes in each vehicle
 
+
 # calculates the time needed for each route
 def calculate_route_details(nodes_sequence, matrix, all_nodes):
     rt_cumulative_cost = 0
@@ -120,16 +114,20 @@ def calculate_route_details(nodes_sequence, matrix, all_nodes):
         rt_load += all_nodes[from_node].demand
     return rt_cumulative_cost, rt_load
 
+
 # prepare the cost matrix for TSP in each bin
-# if the node is not in the bin we assign 100000 in every column and row that it is present so that it is not selected in the TSP algorithm
+# if the node is not in the bin
+# we assign big_value=100000 in every column and row
+# that it is present so that it is not selected in the TSP algorithm
 def tsp_matrix(bin):
     m = Model()
     m.BuildModel()
     for i in range(len(m.matrix)):
         for j in range(len(m.matrix)):
             if i not in bin or j not in bin:
-                m.matrix[i][j] = 100000
+                m.matrix[i][j] = big_value
     return m.matrix
+
 
 # TSP nearest neighbour in a bin
 def tsp(bins):
@@ -139,7 +137,8 @@ def tsp(bins):
         cost_matrix = tsp_matrix(bin)
         order.append(bin[0])  # node 0 is always the first node of the route
         for i in range(len(cost_matrix)):
-            cost_matrix[i][0] = 100000  # assign the cost in the first column as 100000 so that node 0 is not selected again
+            cost_matrix[i][0] = big_value  # assign the cost in the first column as 100000
+            # so that node 0 is not selected again
         while len(order) < len(bin):  # if we haven't ordered all the nodes
             # find the node that is shortest to the last ordered node
             i = order[-1]
@@ -147,9 +146,11 @@ def tsp(bins):
             min_index = temp.index(min(temp))
             order.append(min_index)
             for i in range(len(cost_matrix)):
-                cost_matrix[i][min_index] = 100000  # assign the cost in the ordered node's column as 100000 so that it is not selected again
+                cost_matrix[i][min_index] = big_value  # assign the cost in the ordered node's column
+                # as 100000 so that it is not selected again
         orders.append(order)
     return orders  # returns the bin with the nodes order with the nearest neighbour method
+
 
 # Calculates cumulative cost for all the routes (the objective function)
 def CalculateTotalCost(routes):
@@ -258,14 +259,11 @@ def RelocationMove(routes, matrix, all_nodes):
     return final_routes, total_cost
 
 
-def VND(temp, matrix, all_nodes):  # 5,3,4,1,2,0,6
+def VND(temp, matrix, all_nodes):
     # Variable neighborhood descent
-    # 5 types of moves
-    # 5 types of neighborhoods
     k = 0
     total = CalculateTotalCost(temp)
     while k < 4:
-        # k = random.randint(0, 7)
         if k == 0:
             temp, total_cost = CrossRouteSwapMove(temp, matrix, all_nodes)
             if total_cost < total:
@@ -303,9 +301,9 @@ def VNS(final_routes, matrix, all_nodes):
     total = CalculateTotalCost(final_routes)
     temp = final_routes
     shaker = temp
-    j = 0
-    while time() < end:  # run VNS for 179 seconds
-        j +=1
+    j = 1
+    while time() < end:  # run VNS for 179 seconds, result 6134 comes up at the 171th loop
+        # "shaking" action for the routes
         for i in range(len(shaker)):
             copy1 = shaker[i][1:]
             random.shuffle(copy1)
@@ -315,13 +313,16 @@ def VNS(final_routes, matrix, all_nodes):
             total = cost
             final_routes = deepcopy(temp)
         print(j, cost)
+        j += 1
     return final_routes, total
 
 
 if __name__ == '__main__':
     print("Start")
     start = timeit.default_timer()
-
+    # Initialise "magic" variable
+    global big_value
+    big_value = 100000
     # set the assignment's data
     m = Model()
     m.BuildModel()
@@ -355,8 +356,3 @@ if __name__ == '__main__':
     stop = timeit.default_timer()
     print("End")
     print("Proccessing time: ", stop - start)
-   #total_cost = 0
-   #for route in routes:
-   #    cost, load = calculate_route_details(route, matrix, all_nodes)
-   #    total_cost += cost
-   #print(total_cost)
