@@ -201,7 +201,7 @@ def TwoOptMoveCrossRoute(routes, matrix, all_nodes):
             cost, load = calculate_route_details(final_routes[i], matrix, all_nodes)
             cost += calculate_route_details(final_routes[j], matrix, all_nodes)[0]
             for k in range(1, len(final_routes[i])):
-                for l in range(1, len(final_routes[j])):
+                for l in range(1, len(final_routes[j])-1):
                     new_route1 = final_routes[i][:]
                     new_route2 = final_routes[j][:]
                     new_route1[k:] = final_routes[j][l:]
